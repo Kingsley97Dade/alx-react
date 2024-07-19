@@ -7,14 +7,12 @@ import CourseList from "../CourseList/CourseList";
 import BodySectionWithMarginBottom from "../BodySection/BodySectionWithMarginBottom";
 import BodySection from "../BodySection/BodySection";
 import { getLatestNotification } from "../utils/utils";
-import PropTypes from "prop-types";
 import { StyleSheet, css } from "aphrodite";
+import { AppProvider, user } from "./AppContext";
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.isLoggedIn = props.isLoggedIn;
-    this.logOut = props.logOut;
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.listCourses = [
       { id: 1, name: "ES6", credit: 60 },
@@ -22,34 +20,54 @@ class App extends React.Component {
       { id: 3, name: "React", credit: 40 },
     ];
 
-    this.listNotifications = [
-      { id: 1, value: "New course available", type: "default" },
-      { id: 2, value: "New resume available", type: "urgent" },
-      { id: 3, html: { __html: getLatestNotification() }, type: "urgent" },
-    ];
-
     this.state = {
       displayDrawer: false,
+      user: user,
+      logOut: this.logOut,
+      listNotifications: [
+        { id: 1, value: "New course available", type: "default" },
+        { id: 2, value: "New resume available", type: "urgent" },
+        { id: 3, html: { __html: getLatestNotification() }, type: "urgent" },
+      ]
     };
   }
 
-  handleDisplayDrawer = () => {
-    console.log(this.state.displayDrawer);
-    console.log("Your notification clicked");
-    this.setState({ 
-      displayDrawer: true 
+  markNotificationAsRead = (id) => {
+    const newList = this.state.listNotifications.filter(keep => keep.id !== id);
+    this.setState({
+      listNotifications: newList,
     });
-    console.log(this.state.displayDrawer);
-  }
+  };
+
+  logIn = (email, password) => {
+    // Update the user state
+    this.setState({
+      user: {
+        email,
+        password,
+        isLoggedIn: true,
+      },
+    });
+  };
+
+  logOut = () => {
+    // Reset the user in the local state
+    this.setState({
+      user: user,
+    });
+  };
+
+  handleDisplayDrawer = () => {
+    this.setState({
+      displayDrawer: true,
+    });
+  };
 
   handleHideDrawer = () => {
-    console.log(this.state.displayDrawer);
-    console.log("Close button clicked");
-    this.setState({ 
-      displayDrawer: false 
+    this.setState({
+      displayDrawer: false,
     });
-    console.log(this.state.displayDrawer);
-  }
+  };
 
   handleKeyDown(e) {
     if (e.ctrlKey && e.key === "h") {
@@ -69,32 +87,39 @@ class App extends React.Component {
 
   render() {
     return (
-      <React.Fragment>
-        <Notification 
-          listNotifications={this.listNotifications}
-          displayDrawer={this.state.displayDrawer}
-          handleDisplayDrawer={this.handleDisplayDrawer}
-          handleHideDrawer={this.handleHideDrawer}
-        />
-        <div className={css(bodyStyles.App)}>
-          <Header />
-          {this.props.isLoggedIn ? (
-            <BodySectionWithMarginBottom title="Course list">
-              <CourseList listCourses={this.listCourses} />
-            </BodySectionWithMarginBottom>
-          ) : (
-            <BodySectionWithMarginBottom title="Log in to continue">
-              <Login />
-            </BodySectionWithMarginBottom>
-          )}
-          <BodySection title="News from the School">
-            <p>Random Text</p>
-          </BodySection>
-          <div className={css(footerStyles.footer)}>
-            <Footer />
+      <AppProvider
+        value={{
+          user: this.state.user,
+          logOut: this.state.logOut,
+        }}
+      >
+        <React.Fragment>
+          <Notification
+            listNotifications={this.state.listNotifications}
+            displayDrawer={this.state.displayDrawer}
+            handleDisplayDrawer={this.handleDisplayDrawer}
+            handleHideDrawer={this.handleHideDrawer}
+          />
+          <div className={css(bodyStyles.App)}>
+            <Header />
+            {this.state.user.isLoggedIn ? (
+              <BodySectionWithMarginBottom title="Course list">
+                <CourseList listCourses={this.listCourses} />
+              </BodySectionWithMarginBottom>
+            ) : (
+              <BodySectionWithMarginBottom title="Log in to continue">
+                <Login logIn={this.logIn} />
+              </BodySectionWithMarginBottom>
+            )}
+            <BodySection title="News from the School">
+              <p>Random Text</p>
+            </BodySection>
+            <div className={css(footerStyles.footer)}>
+              <Footer />
+            </div>
           </div>
-        </div>
-      </React.Fragment>
+        </React.Fragment>
+      </AppProvider>
     );
   }
 }
@@ -117,15 +142,5 @@ const footerStyles = StyleSheet.create({
     fontStyle: "italic",
   },
 });
-
-App.defaultProps = {
-  isLoggedIn: false,
-  logOut: () => {},
-};
-
-App.propTypes = {
-  isLoggedIn: PropTypes.bool,
-  logOut: PropTypes.func,
-};
 
 export default App;
