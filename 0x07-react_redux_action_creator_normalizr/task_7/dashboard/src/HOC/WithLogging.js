@@ -1,25 +1,20 @@
 import React from 'react';
+import { shallow, mount } from 'enzyme';
+import WithLogging from './WithLogging';
+import Login from '../Login/Login';
 
-function WithLogging(WrappedComponent) {
-  const componentName =
-    WrappedComponent.displayName || WrappedComponent.name || 'Component';
+describe('<WithLogging />', () => {
+  it('render', () => {
+    console.log = jest.fn();
+    const HOC = WithLogging(() => <p />);
+    const wrapper = shallow(<HOC />);
+    expect(wrapper.exists());
+  });
 
-  class HOC extends React.Component {
-    componentDidMount() {
-      console.log(`Component ${componentName} is mounted`);
-    }
-    componentWillUnmount() {
-      console.log(`Component ${componentName} is going to unmount`);
-    }
-
-    render() {
-      return <WrappedComponent {...this.props} />;
-    }
-  }
-
-  HOC.displayName = `WithLogging(${componentName})`;
-
-  return HOC;
-}
-
-export default WithLogging;
+  it('render login', () => {
+    console.log = jest.fn();
+    const HOC = WithLogging(Login);
+    const wrapper = shallow(<HOC />);
+    expect(wrapper.exists());
+  });
+});
